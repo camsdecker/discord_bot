@@ -43,10 +43,13 @@ async def play(interaction: discord.Interaction, youtube_url: str):
         await interaction.response.send_message("ERROR: user is not in a voice channel")
     else:
         try:
-            bot_voice = await interaction.user.voice.channel.connect()
+            if len(client.voice_clients) == 0:
+                bot_voice = await interaction.user.voice.channel.connect()
+            else:
+                bot_voice = client.voice_clients[0]
             filename = await YTDLSource.from_url(youtube_url)
             bot_voice.play(discord.FFmpegPCMAudio(executable="ffmpeg",source=filename))
-            await interaction.response.send_message(f"Now playing {filename}")
+            await interaction.response.send_message(f"Now playing {youtube_url}")
         except:
             await interaction.response.send_message("ERROR: Something went wrong :(")
 
@@ -55,7 +58,7 @@ async def play(interaction: discord.Interaction, youtube_url: str):
     description="forces the bot to leave the voice channel",
     guild=discord.Object(id=GUILD_ID)
 )
-async def play(interaction: discord.Interaction):
+async def leave(interaction: discord.Interaction):
     if len(client.voice_clients) == 0:
         await interaction.response.send_message("ERROR: bot is not currently in a channel")
     else:
