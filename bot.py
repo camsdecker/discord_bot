@@ -2,8 +2,8 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
-import bot_methods as bot
 from YTDLSource import YTDLSource
+from random import randint
 
 load_dotenv()
 
@@ -30,7 +30,11 @@ async def on_ready():
 )
 async def pics(interaction: discord.Interaction):
     try:
-        pic_path = bot.get_random_pic()
+        path = "/home/cam/discord_bot/discord_bot/pics/"
+        pic_list = os.listdir(path)
+        chosen_pic_index = randint(0,len(pic_list)-1)
+        chosen_pic = pic_list[chosen_pic_index]
+        pic_path = path + chosen_pic
         await interaction.response.send_message(file=discord.File(pic_path))
     except:
         print(f"!!!ERROR: Something went wrong when sending file at {pic_path}!!!")
