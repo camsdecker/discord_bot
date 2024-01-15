@@ -28,6 +28,8 @@ async def on_message(message: discord.Message):
         return
     if message.channel.id != PICS_CHANNEL_ID:
         return
+    if len(message.attachments) == 0:
+        return
     for pic in message.attachments:
         if pic.content_type != "image/jpeg" and pic.content_type != "image/png":
             return
