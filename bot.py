@@ -4,13 +4,14 @@ from discord import app_commands
 from dotenv import load_dotenv
 from YTDLSource import YTDLSource
 from random import randint
+import requests
 
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_ID = os.getenv('GUILD_ID')
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
@@ -19,6 +20,19 @@ async def on_ready():
     await tree.sync(guild=discord.Object(id=GUILD_ID))
     print(f'{client.user} has connected to Discord!')
 
+# downloads pics from the add
+@client.event
+async def on_message(message: discord.Message):
+    pics_channel_id = 1196301248949932032
+    if message.channel.id != pics_channel_id:
+        return
+    
+    for pic in message.attachments:
+        if pic.content_type != "image/jpeg" and pic.content_type != "image/png":
+            return
+        r = requests.get(pic.url)
+        with open("/home/cam/discord_bot/discord_bot/pics/" + pic.filename, 'wb') as f:
+            f.write(r.content)
 
 # /pics
 # selects a random file in the pics/ directory and sends it to the text channel of
@@ -80,7 +94,6 @@ async def pause(interaction: discord.Interaction):
         await interaction.response.send_message("Resuming...")
     else:
         await interaction.response.send_message("ERROR: Bot is not playing any music")
-    
 
 # /leave
 # forces the bot to disconnect from the voice channel it's currently in
