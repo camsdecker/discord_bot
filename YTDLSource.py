@@ -1,5 +1,4 @@
 import asyncio
-#import youtube_dl
 import yt_dlp
 import discord
 

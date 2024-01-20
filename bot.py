@@ -24,6 +24,7 @@ async def on_ready():
 # downloads pics from the add-pics channel
 @client.event
 async def on_message(message: discord.Message):
+    channel = client.get_channel(PICS_CHANNEL_ID)
     if message.author.id == 1053110805568167977:
         return
     if message.channel.id != PICS_CHANNEL_ID:
@@ -32,14 +33,25 @@ async def on_message(message: discord.Message):
         return
     for pic in message.attachments:
         if pic.content_type != "image/jpeg" and pic.content_type != "image/png":
+            await message.delete()
+            await channel.send(f"ERROR: One or more pics are not the correct format")
             return
         r = requests.get(pic.url)
         with open("/home/cam/discord_bot/discord_bot/pics/" + pic.filename, 'wb') as f:
             f.write(r.content)
-    
-    channel = client.get_channel(PICS_CHANNEL_ID)
     await message.delete()
-    await channel.send(f"Successfully uploaded {len(message.attachments)} pic(s)")
+    await channel.send(f"Successfully uploaded {len(message.attachments)} pic(s) {message.author.mention}")
+
+# leave if bot is only one in channel
+@client.event
+async def on_voice_state_update(member: discord.Member, before, after):
+    voice_state = member.guild.voice_client
+    if voice_state is None:
+        # Exiting if the bot is not connected to a voice channel
+        return
+
+    if len(voice_state.channel.members) == 1:
+        await voice_state.disconnect()
 
 # /pics
 # selects a random file in the pics/ directory and sends it to the text channel of
