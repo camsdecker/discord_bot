@@ -11,6 +11,8 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_ID = os.getenv('GUILD_ID')
 PICS_CHANNEL_ID = int(os.getenv('PICS_CHANNEL_ID'))
+GAMING_CHANNEL_ID = int(os.getenv('GAMING_CHANNEL_ID'))
+FARBER_ID = int(os.getenv('FARBER_ID'))
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -23,11 +25,20 @@ async def on_ready():
 
 # downloads pics from the add-pics channel
 @client.event
-async def on_message(message: discord.Message):
-    channel = client.get_channel(PICS_CHANNEL_ID)
+async def on_message(message: discord.Message): 
     if message.author.id == 1053110805568167977:
         return
-    if message.channel.id != PICS_CHANNEL_ID:
+    if message.channel.id == PICS_CHANNEL_ID:
+        channel = client.get_channel(PICS_CHANNEL_ID)
+        path = "/home/cam/discord_bot/discord_bot/pics/"
+    elif message.channel.id == GAMING_CHANNEL_ID:
+        channel = client.get_channel(GAMING_CHANNEL_ID)
+        path = "/home/cam/discord_bot/discord_bot/gaming/"
+    else: 
+        # SPECIAL FARBER FUNCTION
+        #if message.author.id == FARBER_ID:
+         #   if randint(0,50) == 1:
+          #      await message.reply("cringe message please delete")
         return
     if len(message.attachments) == 0:
         return
@@ -37,7 +48,7 @@ async def on_message(message: discord.Message):
             await channel.send(f"ERROR: One or more pics are not the correct format")
             return
         r = requests.get(pic.url)
-        with open("/home/cam/discord_bot/discord_bot/pics/" + pic.filename, 'wb') as f:
+        with open(path + pic.filename, 'wb') as f:
             f.write(r.content)
     await message.delete()
     await channel.send(f"Successfully uploaded {len(message.attachments)} pic(s) {message.author.mention}")
@@ -49,7 +60,6 @@ async def on_voice_state_update(member: discord.Member, before, after):
     if voice_state is None:
         # Exiting if the bot is not connected to a voice channel
         return
-
     if len(voice_state.channel.members) == 1:
         await voice_state.disconnect()
 
@@ -64,6 +74,26 @@ async def on_voice_state_update(member: discord.Member, before, after):
 async def pics(interaction: discord.Interaction):
     try:
         path = "/home/cam/discord_bot/discord_bot/pics/"
+        pic_list = os.listdir(path)
+        chosen_pic_index = randint(0,len(pic_list)-1)
+        chosen_pic = pic_list[chosen_pic_index]
+        pic_path = path + chosen_pic
+        await interaction.response.send_message(file=discord.File(pic_path))
+    except:
+        print(f"!!!ERROR: Something went wrong when sending file at {pic_path}!!!")
+        await interaction.response.send_message("ERROR: Something went wrong, try again")
+
+# /pics
+# selects a random file in the pics/ directory and sends it to the text channel of
+#   whomever used the command
+@tree.command(
+    name="gaming",
+    description="Show a random gaming pic",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def pics(interaction: discord.Interaction):
+    try:
+        path = "/home/cam/discord_bot/discord_bot/gaming/"
         pic_list = os.listdir(path)
         chosen_pic_index = randint(0,len(pic_list)-1)
         chosen_pic = pic_list[chosen_pic_index]
