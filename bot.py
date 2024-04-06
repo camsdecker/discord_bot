@@ -3,8 +3,7 @@ import discord
 from discord import app_commands
 from dotenv import load_dotenv
 from YTDLSource import YTDLSource
-from random import randint
-import requests
+from Album import Album
 
 load_dotenv()
 
@@ -18,28 +17,25 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
+Pics_Album = Album("/home/cam/discord_bot/discord_bot/pics/")
+Gaming_Album = Album("/home/cam/discord_bot/discord_bot/gaming/")
+
 @client.event
 async def on_ready():
     await tree.sync(guild=discord.Object(id=GUILD_ID))
     print(f'{client.user} has connected to Discord!')
 
-# downloads pics from the add-pics channel
+# downloads pics from the add-pics or add-gaming channels
 @client.event
 async def on_message(message: discord.Message): 
     if message.author.id == 1053110805568167977:
         return
     if message.channel.id == PICS_CHANNEL_ID:
         channel = client.get_channel(PICS_CHANNEL_ID)
-        path = "/home/cam/discord_bot/discord_bot/pics/"
+        album = Pics_Album
     elif message.channel.id == GAMING_CHANNEL_ID:
         channel = client.get_channel(GAMING_CHANNEL_ID)
-        path = "/home/cam/discord_bot/discord_bot/gaming/"
-    else: 
-        # SPECIAL FARBER FUNCTION
-        #if message.author.id == FARBER_ID:
-         #   if randint(0,50) == 1:
-          #      await message.reply("cringe message please delete")
-        return
+        album = Gaming_Album
     if len(message.attachments) == 0:
         return
     for pic in message.attachments:
@@ -47,9 +43,7 @@ async def on_message(message: discord.Message):
             await message.delete()
             await channel.send(f"ERROR: One or more pics are not the correct format")
             return
-        r = requests.get(pic.url)
-        with open(path + pic.filename, 'wb') as f:
-            f.write(r.content)
+        album.addPic(pic)
     await message.delete()
     await channel.send(f"Successfully uploaded {len(message.attachments)} pic(s) {message.author.mention}")
 
@@ -71,33 +65,17 @@ async def on_voice_state_update(member: discord.Member, before, after):
     description="Show a random pic",
     guild=discord.Object(id=GUILD_ID)
 )
-async def pics(interaction: discord.Interaction):
+@app_commands.choices(album_choice=[
+    app_commands.Choice(name="pics",value=1),
+    app_commands.Choice(name="gaming",value=2)
+])
+async def pics(interaction: discord.Interaction, album_choice:app_commands.Choice[int]):
+    if album_choice.name == "pics":
+        album = Pics_Album
+    elif album_choice.name == "gaming":
+        album = Gaming_Album
     try:
-        path = "/home/cam/discord_bot/discord_bot/pics/"
-        pic_list = os.listdir(path)
-        chosen_pic_index = randint(0,len(pic_list)-1)
-        chosen_pic = pic_list[chosen_pic_index]
-        pic_path = path + chosen_pic
-        await interaction.response.send_message(file=discord.File(pic_path))
-    except:
-        print(f"!!!ERROR: Something went wrong when sending file at {pic_path}!!!")
-        await interaction.response.send_message("ERROR: Something went wrong, try again")
-
-# /pics
-# selects a random file in the pics/ directory and sends it to the text channel of
-#   whomever used the command
-@tree.command(
-    name="gaming",
-    description="Show a random gaming pic",
-    guild=discord.Object(id=GUILD_ID)
-)
-async def pics(interaction: discord.Interaction):
-    try:
-        path = "/home/cam/discord_bot/discord_bot/gaming/"
-        pic_list = os.listdir(path)
-        chosen_pic_index = randint(0,len(pic_list)-1)
-        chosen_pic = pic_list[chosen_pic_index]
-        pic_path = path + chosen_pic
+        pic_path = album.getRandomPic()
         await interaction.response.send_message(file=discord.File(pic_path))
     except:
         print(f"!!!ERROR: Something went wrong when sending file at {pic_path}!!!")
